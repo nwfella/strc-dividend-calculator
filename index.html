@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STRC Dividend Scenario Calculator</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#121722; --panel2:#0f131c; --border:#232a3a;
+    --text:#e8ecf4; --muted:#8b95ab; --accent:#f7931a;
+    --green:#22c55e; --red:#ef4444; --yellow:#eab308; --blue:#60a5fa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:24px 16px 60px}
+  .wrap{max-width:1120px;margin:0 auto}
+  .num{font-variant-numeric:tabular-nums}
+  h1{font-size:22px;letter-spacing:.3px}
+  h1 .tick{color:var(--accent)}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:18px}
+  .price-now{font-size:34px;font-weight:700;line-height:1}
+  .price-now small{font-size:14px;color:var(--muted);font-weight:400}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:7px 12px;font-size:13px}
+  .chip b{display:block;font-size:15px}
+  .chip .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+  .chip.disc-down{border-color:rgba(239,68,68,.45)}
+  .chip.disc-up{border-color:rgba(34,197,94,.45)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:18px}
+  .card h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px}
+  .chartbox{position:relative}
+  canvas{width:100%;height:340px;display:block;border-radius:8px;background:var(--panel2)}
+  .tt{position:absolute;pointer-events:none;background:rgba(11,14,20,.94);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;display:none;white-space:nowrap}
+  .tt b{color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{color:var(--muted);text-align:right;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;padding:6px 10px;border-bottom:1px solid var(--border)}
+  th:first-child,td:first-child{text-align:left}
+  td{padding:7px 10px;text-align:right;border-bottom:1px solid #1a2130}
+  tr:last-child td{border-bottom:none}
+  .pos{color:var(--green)} .neg{color:var(--red)} .flat{color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+  .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:4px}
+  .field input[type=number],.field select{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-size:15px;font-variant-numeric:tabular-nums}
+  .field input[type=number]:focus,.field select:focus{outline:none;border-color:var(--accent)}
+  .field .hint{font-size:11px;color:var(--muted);margin-top:3px}
+  .scen{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;border-left:4px solid var(--yellow)}
+  .scen.bear{border-left-color:var(--red)} .scen.neutral{border-left-color:var(--yellow)} .scen.bull{border-left-color:var(--green)}
+  .scen .shead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .scen .sname{font-weight:700;font-size:15px}
+  .scen .sprob input{width:74px;background:var(--panel);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums}
+  .scen .srow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .srow .hint{font-size:11px;color:var(--muted);margin-top:2px}
+  .btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 16px;font-size:13.5px;cursor:pointer}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#0b0e14;font-weight:700}
+  .btnrow{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+  .seg button{background:var(--panel2);border:none;color:var(--muted);padding:8px 18px;font-size:13px;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#0b0e14;font-weight:700}
+  .note{font-size:12px;color:var(--muted);margin-top:10px}
+  .evrow td{background:rgba(247,147,26,.07);font-weight:700;border-top:2px solid var(--accent)}
+  .foot{margin-top:22px;color:var(--muted);font-size:12px;text-align:center}
+  .foot code{background:var(--panel);padding:2px 6px;border-radius:5px;border:1px solid var(--border)}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .legend .pegline{height:0;border-top:2px dashed var(--muted)}
+  .divnote{font-size:12px;color:var(--muted);margin-top:8px}
+  .flag{color:var(--yellow);font-size:11px}
+  @media(max-width:600px){.scen .srow{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>STRC <span class="tick">Dividend Scenario Calculator</span></h1>
+      <div class="sub">Strategy Inc — Variable-Rate Preferred · NASDAQ: STRC · $100 par peg</div>
+    </div>
+    <div class="chips">
+      <div class="chip"><span class="lbl">Last close</span><b class="num" id="chip-price">—</b></div>
+      <div class="chip disc-down" id="chip-peg"><span class="lbl">vs $100 par</span><b class="num" id="chip-peg-v">—</b></div>
+      <div class="chip"><span class="lbl">Run-rate / yr</span><b class="num" id="chip-rate">—</b></div>
+      <div class="chip"><span class="lbl">Yield on price</span><b class="num" id="chip-yield">—</b></div>
+      <div class="chip"><span class="lbl">52W range</span><b class="num" id="chip-52">—</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Price history vs par peg</h2>
+    <div class="chartbox">
+      <canvas id="chart" width="1080" height="340"></canvas>
+      <div class="tt" id="tt"></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>STRC close</span>
+      <span><i class="pegline"></i>$100.00 par peg</span>
+      <span id="chart-summary"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Dividend payment history</h2>
+    <div style="overflow-x:auto">
+      <table id="div-table">
+        <thead><tr><th>Ex-date</th><th>Amount</th><th>Cumulative</th><th>Annualized run-rate</th><th>Note</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="divnote" id="div-note"></div>
+  </div>
+
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <h2>Your position</h2>
+        <div class="inputs">
+          <div class="field"><label>Shares held</label><input type="number" id="in-shares" value="100" min="1" step="1"></div>
+          <div class="field"><label>Cost basis / share</label><input type="number" id="in-cost" value="94.06" min="0.01" step="0.01"></div>
+          <div class="field"><label>Horizon (months)</label><input type="number" id="in-horizon" value="12" min="1" max="60" step="1"></div>
+        </div>
+        <div class="btnrow" style="margin-top:14px">
+          <div class="seg" id="seg-mode">
+            <button data-mode="cash" class="on">Cash dividends</button>
+            <button data-mode="reinvest">Reinvest</button>
+          </div>
+          <button class="btn" id="btn-reset">Reset to defaults</button>
+        </div>
+        <p class="note" id="position-summary"></p>
+      </div>
+
+      <div class="card">
+        <h2>Scenarios — relative to the $100 peg</h2>
+        <div id="scen-wrap"></div>
+        <p class="note">Terminal price glides linearly from today's close over the horizon. Dividend paths interpolate per-share monthly payouts (variable-rate preferred). Probabilities auto-normalize.</p>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>Projected results</h2>
+        <div style="overflow-x:auto">
+          <table id="res-table">
+            <thead><tr>
+              <th>Scenario</th><th>Prob</th><th>End price</th><th>vs par</th>
+              <th>Price P&amp;L</th><th>Div income</th><th>Total return</th><th>Total %</th>
+              <th>Yield on cost</th><th>Current yield</th><th>Breakeven</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="note" id="res-note"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Data as of <span id="asof">—</span> · baked statically from Yahoo Finance (v8 chart API) — no runtime API calls.
+    Refresh: <code>python scripts/update_data.py --bake</code> · Scenario projections are modeled estimates, not forecasts or investment advice.
+  </div>
+</div>
+
+<script>
+/* STRC scenario engine — pure functions, no DOM. window.STRC_ENGINE. */
+(function () {
+  "use strict";
+
+  // Linear interpolation: value at month m of `months` total.
+  function lerp(start, end, months, m) {
+    return start + (end - start) * (m / Math.max(1, months));
+  }
+
+  // One scenario run. cfg: {label, prob, priceNow, priceEnd, divStart, divEnd,
+  //                         shares, costBasis, horizon, reinvest}
+  function scenario(cfg) {
+    const months = Math.max(1, Math.round(cfg.horizon));
+    const cost = cfg.shares * cfg.costBasis;
+    let shares = cfg.shares;
+    let divIncome = 0;
+    let price = cfg.priceNow;
+    for (let m = 1; m <= months; m++) {
+      price = lerp(cfg.priceNow, cfg.priceEnd, months, m);
+      const divPerShare = lerp(cfg.divStart, cfg.divEnd, months, m);
+      const divAmt = shares * divPerShare;
+      if (cfg.reinvest) {
+        shares += divAmt / price;
+      }
+      divIncome += divAmt;
+    }
+    const endPrice = cfg.priceEnd;
+    const pricePnL = (endPrice - cfg.priceNow) * cfg.shares;
+    const endValue = shares * endPrice;
+    const totalReturn = endValue - cost + divIncome;
+    const annDiv = ((cfg.divStart + cfg.divEnd) / 2) * 12;
+    const avgDivPerShare = (cfg.divStart + cfg.divEnd) / 2;
+    return {
+      label: cfg.label,
+      prob: cfg.prob,
+      endPrice: round2(endPrice),
+      pricePnL: round2(pricePnL),
+      divIncome: round2(divIncome),
+      endValue: round2(endValue),
+      totalReturn: round2(totalReturn),
+      priceRet: pricePnL / (cfg.priceNow * cfg.shares),
+      totalRet: totalReturn / cost,
+      yieldOnCost: annDiv / cfg.costBasis,
+      curYield: annDiv / endPrice,
+      breakevenMonths: cfg.reinvest
+        ? null
+        : Math.ceil(cost / (cfg.shares * avgDivPerShare)),
+      endShares: round4(shares),
+    };
+  }
+
+  // Run all scenarios + probability-weighted EV row.
+  function evaluate(scenarios, base) {
+    const rows = scenarios.map(function (s) {
+      return scenario({
+        label: s.label,
+        prob: s.prob,
+        priceNow: base.priceNow,
+        priceEnd: s.priceEnd,
+        divStart: s.divStart,
+        divEnd: s.divEnd,
+        shares: base.shares,
+        costBasis: base.costBasis,
+        horizon: base.horizon,
+        reinvest: base.reinvest,
+      });
+    });
+    const ev = {
+      label: "EV (weighted)",
+      prob: rows.reduce(function (a, r) { return a + r.prob; }, 0),
+      endPrice: round2(rows.reduce(function (a, r) { return a + r.prob * r.endPrice; }, 0)),
+      pricePnL: round2(rows.reduce(function (a, r) { return a + r.prob * r.pricePnL; }, 0)),
+      divIncome: round2(rows.reduce(function (a, r) { return a + r.prob * r.divIncome; }, 0)),
+      endValue: round2(rows.reduce(function (a, r) { return a + r.prob * r.endValue; }, 0)),
+      totalReturn: round2(rows.reduce(function (a, r) { return a + r.prob * r.totalReturn; }, 0)),
+      priceRet: rows.reduce(function (a, r) { return a + r.prob * r.priceRet; }, 0),
+      totalRet: rows.reduce(function (a, r) { return a + r.prob * r.totalRet; }, 0),
+      yieldOnCost: rows.reduce(function (a, r) { return a + r.prob * r.yieldOnCost; }, 0),
+      curYield: rows.reduce(function (a, r) { return a + r.prob * r.curYield; }, 0),
+      breakevenMonths: null,
+      endShares: round4(rows.reduce(function (a, r) { return a + r.prob * r.endShares; }, 0)),
+    };
+    return rows.concat([ev]);
+  }
+
+  function round2(x) { return Math.round(x * 100) / 100; }
+  function round4(x) { return Math.round(x * 10000) / 10000; }
+
+  // Default scenario configs, anchored to live data (2026-08-06).
+  function defaults(basePrice) {
+    return [
+      { label: "Bearish", prob: 0.30, priceEnd: 84.00, divStart: 1.00, divEnd: 0.80 },
+      { label: "Neutral", prob: 0.40, priceEnd: basePrice, divStart: 1.00, divEnd: 1.00 },
+      { label: "Bullish", prob: 0.30, priceEnd: 104.00, divStart: 1.00, divEnd: 1.10 },
+    ];
+  }
+
+  var root = typeof window !== "undefined" ? window : globalThis;
+  root.STRC_ENGINE = { scenario: scenario, evaluate: evaluate, defaults: defaults };
+})();
+
+</script>
+<script>
+/*__DATA_START__*/
+window.STRC_DATA = {"meta": {"symbol": "STRC", "name": "Strategy Inc - Variable Rate Se", "par": 100.0, "currency": "USD", "as_of": "2026-08-07T00:12:27Z", "source": "yahoo v8 chart API", "last_close": 94.06, "last_close_date": "2026-08-06", "fifty_two_week": {"high": 100.42, "low": 71.25}}, "prices": [{"date": "2025-08-07", "open": 97.55, "high": 97.75, "low": 97.3, "close": 97.59, "volume": 1291000}, {"date": "2025-08-08", "open": 97.8, "high": 97.89, "low": 97.4, "close": 97.5, "volume": 826000}, {"date": "2025-08-11", "open": 98.25, "high": 98.33, "low": 97.86, "close": 98.05, "volume": 1357500}, {"date": "2025-08-12", "open": 98.49, "high": 98.49, "low": 97.28, "close": 97.79, "volume": 818400}, {"date": "2025-08-13", "open": 98.16, "high": 98.2, "low": 97.65, "close": 97.9, "volume": 759100}, {"date": "2025-08-14", "open": 97.98, "high": 98.19, "low": 97.6, "close": 98.01, "volume": 822000}, {"date": "2025-08-15", "open": 97.78, "high": 97.9, "low": 96.38, "close": 96.95, "volume": 650800}, {"date": "2025-08-18", "open": 97.2, "high": 97.23, "low": 95.43, "close": 96.25, "volume": 715300}, {"date": "2025-08-19", "open": 96.25, "high": 96.25, "low": 92.2, "close": 93.6, "volume": 1311600}, {"date": "2025-08-20", "open": 94.0, "high": 94.49, "low": 92.53, "close": 93.99, "volume": 821900}, {"date": "2025-08-21", "open": 94.1, "high": 94.53, "low": 93.6, "close": 94.44, "volume": 419900}, {"date": "2025-08-22", "open": 94.84, "high": 95.8, "low": 94.12, "close": 95.05, "volume": 722500}, {"date": "2025-08-25", "open": 95.0, "high": 95.25, "low": 94.5, "close": 95.1, "volume": 566000}, {"date": "2025-08-26", "open": 95.11, "high": 95.8, "low": 94.92, "close": 95.66, "volume": 355500}, {"date": "2025-08-27", "open": 95.88, "high": 96.95, "low": 95.66, "close": 96.52, "volume": 506800}, {"date": "2025-08-28", "open": 96.92, "high": 97.62, "low": 96.7, "close": 97.41, "volume": 579900}, {"date": "2025-08-29", "open": 97.39, "high": 97.9, "low": 97.24, "close": 97.75, "volume": 3887600}, {"date": "2025-09-02", "open": 97.5, "high": 98.1, "low": 97.2, "close": 97.48, "volume": 688400}, {"date": "2025-09-03", "open": 98.43, "high": 98.43, "low": 97.55, "close": 97.67, "volume": 606000}, {"date": "2025-09-04", "open": 97.89, "high": 97.94, "low": 97.34, "close": 97.46, "volume": 631000}, {"date": "2025-09-05", "open": 97.77, "high": 97.97, "low": 97.5, "close": 97.6, "volume": 410100}, {"date": "2025-09-08", "open": 97.8, "high": 97.9, "low": 97.45, "close": 97.56, "volume": 375000}, {"date": "2025-09-09", "open": 97.51, "high": 97.69, "low": 97.19, "close": 97.33, "volume": 318300}, {"date": "2025-09-10", "open": 97.54, "high": 97.65, "low": 97.3, "close": 97.4, "volume": 313500}, {"date": "2025-09-11", "open": 97.5, "high": 97.54, "low": 97.25, "close": 97.37, "volume": 308600}, {"date": "2025-09-12", "open": 97.63, "high": 97.79, "low": 97.13, "close": 97.25, "volume": 472300}, {"date": "2025-09-15", "open": 96.8, "high": 97.22, "low": 96.61, "close": 96.9, "volume": 333500}, {"date": "2025-09-16", "open": 97.08, "high": 97.5, "low": 96.62, "close": 96.95, "volume": 281500}, {"date": "2025-09-17", "open": 96.9, "high": 97.34, "low": 96.88, "close": 97.26, "volume": 249800}, {"date": "2025-09-18", "open": 97.49, "high": 98.1, "low": 97.1, "close": 97.5, "volume": 328300}, {"date": "2025-09-19", "open": 97.64, "high": 97.74, "low": 97.4, "close": 97.7, "volume": 283300}, {"date": "2025-09-22", "open": 97.75, "high": 97.75, "low": 97.51, "close": 97.55, "volume": 231900}, {"date": "2025-09-23", "open": 97.5, "high": 97.75, "low": 97.4, "close": 97.4, "volume": 214200}, {"date": "2025-09-24", "open": 97.75, "high": 97.75, "low": 97.5, "close": 97.5, "volume": 134600}, {"date": "2025-09-25", "open": 97.49, "high": 97.49, "low": 96.88, "close": 96.92, "volume": 533100}, {"date": "2025-09-26", "open": 97.05, "high": 97.29, "low": 96.96, "close": 97.0, "volume": 306800}, {"date": "2025-09-29", "open": 97.31, "high": 97.35, "low": 96.95, "close": 97.05, "volume": 277000}, {"date": "2025-09-30", "open": 97.2, "high": 97.46, "low": 97.04, "close": 97.06, "volume": 423100}, {"date": "2025-10-01", "open": 97.88, "high": 98.25, "low": 97.4, "close": 97.98, "volume": 620600}, {"date": "2025-10-02", "open": 99.13, "high": 100.0, "low": 98.58, "close": 98.97, "volume": 989600}, {"date": "2025-10-03", "open": 99.25, "high": 99.4, "low": 98.65, "close": 99.0, "volume": 763300}, {"date": "2025-10-06", "open": 99.37, "high": 99.6, "low": 99.03, "close": 99.15, "volume": 856700}, {"date": "2025-10-07", "open": 99.3, "high": 99.4, "low": 98.55, "close": 98.7, "volume": 609900}, {"date": "2025-10-08", "open": 99.0, "high": 99.03, "low": 98.58, "close": 98.9, "volume": 417300}, {"date": "2025-10-09", "open": 99.2, "high": 99.28, "low": 98.66, "close": 98.75, "volume": 504600}, {"date": "2025-10-10", "open": 99.05, "high": 99.19, "low": 98.63, "close": 98.63, "volume": 1054300}, {"date": "2025-10-13", "open": 99.14, "high": 99.19, "low": 98.9, "close": 99.03, "volume": 682400}, {"date": "2025-10-14", "open": 99.04, "high": 99.05, "low": 98.78, "close": 98.8, "volume": 901100}, {"date": "2025-10-15", "open": 98.35, "high": 98.59, "low": 98.2, "close": 98.38, "volume": 567600}, {"date": "2025-10-16", "open": 98.57, "high": 98.65, "low": 97.08, "close": 97.3, "volume": 813000}, {"date": "2025-10-17", "open": 97.3, "high": 98.05, "low": 96.75, "close": 97.4, "volume": 954700}, {"date": "2025-10-20", "open": 98.5, "high": 98.8, "low": 98.2, "close": 98.62, "volume": 600700}, {"date": "2025-10-21", "open": 98.65, "high": 98.76, "low": 98.43, "close": 98.62, "volume": 373600}, {"date": "2025-10-22", "open": 98.65, "high": 98.7, "low": 97.9, "close": 98.12, "volume": 560300}, {"date": "2025-10-23", "open": 98.53, "high": 98.67, "low": 98.15, "close": 98.67, "volume": 481500}, {"date": "2025-10-24", "open": 98.85, "high": 98.9, "low": 98.61, "close": 98.71, "volume": 534400}, {"date": "2025-10-27", "open": 98.93, "high": 98.93, "low": 98.31, "close": 98.5, "volume": 706100}, {"date": "2025-10-28", "open": 98.79, "high": 98.84, "low": 98.5, "close": 98.6, "volume": 591000}, {"date": "2025-10-29", "open": 98.81, "high": 98.9, "low": 98.6, "close": 98.72, "volume": 886600}, {"date": "2025-10-30", "open": 98.98, "high": 99.02, "low": 98.77, "close": 98.89, "volume": 994500}, {"date": "2025-10-31", "open": 99.64, "high": 99.64, "low": 99.14, "close": 99.38, "volume": 1449500}, {"date": "2025-11-03", "open": 99.77, "high": 99.85, "low": 99.49, "close": 99.61, "volume": 1233000}, {"date": "2025-11-04", "open": 99.7, "high": 100.14, "low": 99.55, "close": 99.74, "volume": 1518000}, {"date": "2025-11-05", "open": 100.19, "high": 100.19, "low": 99.88, "close": 100.01, "volume": 1016000}, {"date": "2025-11-06", "open": 100.18, "high": 100.2, "low": 99.86, "close": 99.89, "volume": 1218800}, {"date": "2025-11-07", "open": 100.04, "high": 100.05, "low": 99.16, "close": 99.18, "volume": 1508000}, {"date": "2025-11-10", "open": 99.84, "high": 100.03, "low": 99.7, "close": 99.96, "volume": 1214900}, {"date": "2025-11-11", "open": 100.07, "high": 100.07, "low": 99.94, "close": 100.0, "volume": 766500}, {"date": "2025-11-12", "open": 100.02, "high": 100.1, "low": 99.95, "close": 100.01, "volume": 1776400}, {"date": "2025-11-13", "open": 100.03, "high": 100.07, "low": 97.82, "close": 98.62, "volume": 2691900}, {"date": "2025-11-14", "open": 98.0, "high": 99.41, "low": 97.08, "close": 97.76, "volume": 1976800}, {"date": "2025-11-17", "open": 98.18, "high": 98.4, "low": 92.47, "close": 94.58, "volume": 2884000}, {"date": "2025-11-18", "open": 94.87, "high": 97.1, "low": 94.32, "close": 96.39, "volume": 1395600}, {"date": "2025-11-19", "open": 96.78, "high": 96.9, "low": 91.13, "close": 94.59, "volume": 2099100}, {"date": "2025-11-20", "open": 95.99, "high": 96.5, "low": 90.68, "close": 92.79, "volume": 1835700}, {"date": "2025-11-21", "open": 90.64, "high": 95.89, "low": 90.52, "close": 95.38, "volume": 2306300}, {"date": "2025-11-24", "open": 95.66, "high": 97.59, "low": 95.4, "close": 96.38, "volume": 1098600}, {"date": "2025-11-25", "open": 96.39, "high": 97.24, "low": 95.7, "close": 96.29, "volume": 558400}, {"date": "2025-11-26", "open": 97.19, "high": 97.57, "low": 96.69, "close": 97.17, "volume": 545700}, {"date": "2025-11-28", "open": 97.84, "high": 97.91, "low": 96.6, "close": 96.66, "volume": 523500}, {"date": "2025-12-01", "open": 96.15, "high": 96.94, "low": 95.57, "close": 96.41, "volume": 988500}, {"date": "2025-12-02", "open": 97.28, "high": 98.0, "low": 97.25, "close": 97.8, "volume": 773400}, {"date": "2025-12-03", "open": 98.5, "high": 98.7, "low": 98.1, "close": 98.2, "volume": 597100}, {"date": "2025-12-04", "open": 98.6, "high": 98.71, "low": 97.87, "close": 98.2, "volume": 518800}, {"date": "2025-12-05", "open": 98.25, "high": 98.25, "low": 97.7, "close": 98.19, "volume": 561500}, {"date": "2025-12-08", "open": 98.58, "high": 98.79, "low": 98.46, "close": 98.53, "volume": 550000}, {"date": "2025-12-09", "open": 98.73, "high": 99.09, "low": 98.65, "close": 99.09, "volume": 507900}, {"date": "2025-12-10", "open": 99.46, "high": 99.46, "low": 98.93, "close": 98.98, "volume": 685700}, {"date": "2025-12-11", "open": 99.0, "high": 99.4, "low": 98.97, "close": 99.07, "volume": 608000}, {"date": "2025-12-12", "open": 99.28, "high": 99.3, "low": 98.93, "close": 99.06, "volume": 828800}, {"date": "2025-12-15", "open": 98.75, "high": 98.83, "low": 97.1, "close": 97.7, "volume": 821400}, {"date": "2025-12-16", "open": 98.0, "high": 98.17, "low": 97.66, "close": 97.84, "volume": 389400}, {"date": "2025-12-17", "open": 98.18, "high": 98.2, "low": 97.24, "close": 97.33, "volume": 536100}, {"date": "2025-12-18", "open": 98.09, "high": 98.3, "low": 97.66, "close": 97.9, "volume": 326100}, {"date": "2025-12-19", "open": 98.2, "high": 98.74, "low": 98.06, "close": 98.74, "volume": 421000}, {"date": "2025-12-22", "open": 98.82, "high": 99.0, "low": 98.63, "close": 98.94, "volume": 458000}, {"date": "2025-12-23", "open": 98.96, "high": 99.03, "low": 98.65, "close": 99.0, "volume": 495300}, {"date": "2025-12-24", "open": 99.0, "high": 99.03, "low": 98.9, "close": 98.96, "volume": 200700}, {"date": "2025-12-26", "open": 99.0, "high": 99.15, "low": 98.68, "close": 99.15, "volume": 384700}, {"date": "2025-12-29", "open": 99.0, "high": 99.1, "low": 98.61, "close": 98.79, "volume": 527300}, {"date": "2025-12-30", "open": 99.0, "high": 99.18, "low": 98.86, "close": 98.98, "volume": 334800}, {"date": "2025-12-31", "open": 99.18, "high": 99.18, "low": 98.65, "close": 98.79, "volume": 580300}, {"date": "2026-01-02", "open": 99.16, "high": 99.68, "low": 98.84, "close": 99.67, "volume": 829700}, {"date": "2026-01-05", "open": 99.85, "high": 99.97, "low": 99.7, "close": 99.93, "volume": 859400}, {"date": "2026-01-06", "open": 99.95, "high": 99.99, "low": 99.86, "close": 99.97, "volume": 516300}, {"date": "2026-01-07", "open": 100.02, "high": 100.07, "low": 99.99, "close": 99.99, "volume": 771400}, {"date": "2026-01-08", "open": 99.99, "high": 100.09, "low": 99.98, "close": 100.03, "volume": 811100}, {"date": "2026-01-09", "open": 100.11, "high": 100.15, "low": 100.0, "close": 100.03, "volume": 1169100}, {"date": "2026-01-12", "open": 100.01, "high": 100.12, "low": 100.0, "close": 100.07, "volume": 1765300}, {"date": "2026-01-13", "open": 100.31, "high": 100.42, "low": 100.0, "close": 100.02, "volume": 1753700}, {"date": "2026-01-14", "open": 100.18, "high": 100.19, "low": 100.0, "close": 100.05, "volume": 1970100}, {"date": "2026-01-15", "open": 99.55, "high": 99.99, "low": 99.43, "close": 99.99, "volume": 1179300}, {"date": "2026-01-16", "open": 99.99, "high": 100.04, "low": 99.88, "close": 100.01, "volume": 925800}, {"date": "2026-01-20", "open": 99.9, "high": 100.04, "low": 99.08, "close": 99.12, "volume": 1696900}, {"date": "2026-01-21", "open": 99.8, "high": 99.99, "low": 99.5, "close": 99.55, "volume": 1391200}, {"date": "2026-01-22", "open": 99.84, "high": 99.85, "low": 99.5, "close": 99.71, "volume": 943800}, {"date": "2026-01-23", "open": 99.83, "high": 99.94, "low": 99.25, "close": 99.5, "volume": 1178300}, {"date": "2026-01-26", "open": 99.64, "high": 99.69, "low": 98.74, "close": 99.05, "volume": 1276800}, {"date": "2026-01-27", "open": 99.3, "high": 99.39, "low": 99.0, "close": 99.16, "volume": 1067800}, {"date": "2026-01-28", "open": 99.43, "high": 99.5, "low": 98.85, "close": 98.99, "volume": 1092400}, {"date": "2026-01-29", "open": 99.0, "high": 99.09, "low": 97.95, "close": 98.19, "volume": 1929900}, {"date": "2026-01-30", "open": 98.38, "high": 99.43, "low": 98.25, "close": 98.99, "volume": 1242000}, {"date": "2026-02-02", "open": 98.35, "high": 99.43, "low": 98.3, "close": 99.05, "volume": 1375600}, {"date": "2026-02-03", "open": 99.17, "high": 99.34, "low": 97.85, "close": 98.46, "volume": 1510400}, {"date": "2026-02-04", "open": 98.62, "high": 98.7, "low": 97.0, "close": 97.99, "volume": 1728400}, {"date": "2026-02-05", "open": 96.59, "high": 96.87, "low": 93.1, "close": 93.67, "volume": 3369100}, {"date": "2026-02-06", "open": 97.38, "high": 98.93, "low": 96.25, "close": 98.76, "volume": 1916300}, {"date": "2026-02-09", "open": 98.9, "high": 99.72, "low": 98.34, "close": 99.72, "volume": 1052000}, {"date": "2026-02-10", "open": 99.5, "high": 99.9, "low": 99.46, "close": 99.67, "volume": 924100}, {"date": "2026-02-11", "open": 99.77, "high": 100.04, "low": 99.4, "close": 100.0, "volume": 930400}, {"date": "2026-02-12", "open": 100.01, "high": 100.09, "low": 99.95, "close": 100.03, "volume": 1993900}, {"date": "2026-02-13", "open": 99.54, "high": 99.9, "low": 99.42, "close": 99.8, "volume": 1037100}, {"date": "2026-02-17", "open": 99.73, "high": 99.77, "low": 99.27, "close": 99.33, "volume": 1104000}, {"date": "2026-02-18", "open": 99.44, "high": 99.63, "low": 99.32, "close": 99.5, "volume": 634900}, {"date": "2026-02-19", "open": 99.4, "high": 99.7, "low": 99.2, "close": 99.66, "volume": 418900}, {"date": "2026-02-20", "open": 99.54, "high": 99.85, "low": 99.54, "close": 99.82, "volume": 457700}, {"date": "2026-02-23", "open": 99.62, "high": 99.88, "low": 99.55, "close": 99.84, "volume": 774900}, {"date": "2026-02-24", "open": 99.71, "high": 99.94, "low": 99.65, "close": 99.91, "volume": 635500}, {"date": "2026-02-25", "open": 99.97, "high": 100.0, "low": 99.85, "close": 99.96, "volume": 1248300}, {"date": "2026-02-26", "open": 99.99, "high": 100.0, "low": 99.82, "close": 100.0, "volume": 795400}, {"date": "2026-02-27", "open": 99.95, "high": 100.05, "low": 99.61, "close": 100.0, "volume": 898600}, {"date": "2026-03-02", "open": 100.0, "high": 100.1, "low": 99.97, "close": 100.0, "volume": 1430700}, {"date": "2026-03-03", "open": 99.96, "high": 100.07, "low": 99.95, "close": 100.01, "volume": 2007200}, {"date": "2026-03-04", "open": 100.14, "high": 100.17, "low": 100.03, "close": 100.05, "volume": 1506800}, {"date": "2026-03-05", "open": 100.1, "high": 100.12, "low": 100.0, "close": 100.01, "volume": 1333700}, {"date": "2026-03-06", "open": 100.01, "high": 100.06, "low": 100.0, "close": 100.02, "volume": 2667200}, {"date": "2026-03-09", "open": 100.01, "high": 100.08, "low": 100.0, "close": 100.06, "volume": 3156800}, {"date": "2026-03-10", "open": 100.02, "high": 100.08, "low": 100.0, "close": 100.02, "volume": 4394200}, {"date": "2026-03-11", "open": 100.01, "high": 100.18, "low": 100.01, "close": 100.03, "volume": 4617800}, {"date": "2026-03-12", "open": 100.03, "high": 100.07, "low": 99.95, "close": 100.01, "volume": 7468600}, {"date": "2026-03-13", "open": 99.68, "high": 99.8, "low": 99.5, "close": 99.75, "volume": 3027100}, {"date": "2026-03-16", "open": 99.85, "high": 99.9, "low": 99.69, "close": 99.83, "volume": 2493600}, {"date": "2026-03-17", "open": 99.89, "high": 99.89, "low": 99.85, "close": 99.88, "volume": 1545500}, {"date": "2026-03-18", "open": 99.88, "high": 99.88, "low": 99.5, "close": 99.57, "volume": 1694600}, {"date": "2026-03-19", "open": 99.5, "high": 99.69, "low": 99.36, "close": 99.48, "volume": 1398900}, {"date": "2026-03-20", "open": 99.73, "high": 99.75, "low": 99.37, "close": 99.55, "volume": 1315000}, {"date": "2026-03-23", "open": 99.71, "high": 99.95, "low": 99.71, "close": 99.86, "volume": 1818100}, {"date": "2026-03-24", "open": 99.89, "high": 99.98, "low": 99.87, "close": 99.95, "volume": 1681700}, {"date": "2026-03-25", "open": 99.99, "high": 100.0, "low": 99.93, "close": 99.94, "volume": 1524600}, {"date": "2026-03-26", "open": 99.95, "high": 100.0, "low": 99.94, "close": 99.97, "volume": 2129200}, {"date": "2026-03-27", "open": 99.9, "high": 99.94, "low": 99.63, "close": 99.91, "volume": 2111000}, {"date": "2026-03-30", "open": 99.99, "high": 100.0, "low": 99.82, "close": 99.96, "volume": 2111400}, {"date": "2026-03-31", "open": 100.0, "high": 100.02, "low": 99.9, "close": 100.02, "volume": 5227300}, {"date": "2026-04-01", "open": 100.02, "high": 100.02, "low": 99.97, "close": 100.0, "volume": 1597900}, {"date": "2026-04-02", "open": 99.96, "high": 100.01, "low": 99.94, "close": 100.0, "volume": 2104100}, {"date": "2026-04-06", "open": 99.99, "high": 100.01, "low": 99.99, "close": 100.0, "volume": 1659900}, {"date": "2026-04-07", "open": 100.0, "high": 100.01, "low": 99.98, "close": 100.0, "volume": 1703500}, {"date": "2026-04-08", "open": 100.0, "high": 100.01, "low": 99.99, "close": 100.0, "volume": 3331400}, {"date": "2026-04-09", "open": 100.0, "high": 100.11, "low": 100.0, "close": 100.0, "volume": 3097800}, {"date": "2026-04-10", "open": 100.01, "high": 100.01, "low": 100.0, "close": 100.0, "volume": 5293500}, {"date": "2026-04-13", "open": 100.01, "high": 100.01, "low": 100.0, "close": 100.0, "volume": 11728000}, {"date": "2026-04-14", "open": 100.0, "high": 100.1, "low": 100.0, "close": 100.0, "volume": 15823400}, {"date": "2026-04-15", "open": 99.44, "high": 99.49, "low": 99.1, "close": 99.32, "volume": 5039400}, {"date": "2026-04-16", "open": 99.4, "high": 99.42, "low": 98.95, "close": 99.06, "volume": 3326800}, {"date": "2026-04-17", "open": 99.23, "high": 99.35, "low": 99.12, "close": 99.21, "volume": 3376500}, {"date": "2026-04-20", "open": 99.44, "high": 99.48, "low": 99.25, "close": 99.32, "volume": 3092600}, {"date": "2026-04-21", "open": 99.41, "high": 99.5, "low": 99.24, "close": 99.29, "volume": 1877200}, {"date": "2026-04-22", "open": 99.47, "high": 99.52, "low": 99.4, "close": 99.44, "volume": 2684100}, {"date": "2026-04-23", "open": 99.5, "high": 99.67, "low": 99.45, "close": 99.6, "volume": 1795800}, {"date": "2026-04-24", "open": 99.66, "high": 99.76, "low": 99.53, "close": 99.53, "volume": 2205500}, {"date": "2026-04-27", "open": 99.63, "high": 99.7, "low": 99.43, "close": 99.45, "volume": 2012700}, {"date": "2026-04-28", "open": 99.5, "high": 99.55, "low": 99.37, "close": 99.45, "volume": 1870600}, {"date": "2026-04-29", "open": 99.52, "high": 99.57, "low": 99.46, "close": 99.47, "volume": 1902900}, {"date": "2026-04-30", "open": 99.52, "high": 99.84, "low": 99.52, "close": 99.75, "volume": 2508700}, {"date": "2026-05-01", "open": 99.88, "high": 99.9, "low": 99.81, "close": 99.86, "volume": 2572600}, {"date": "2026-05-04", "open": 99.94, "high": 99.95, "low": 99.89, "close": 99.95, "volume": 2647700}, {"date": "2026-05-05", "open": 99.98, "high": 99.98, "low": 99.92, "close": 99.96, "volume": 2372500}, {"date": "2026-05-06", "open": 99.98, "high": 99.98, "low": 99.95, "close": 99.97, "volume": 2519800}, {"date": "2026-05-07", "open": 99.96, "high": 99.98, "low": 99.92, "close": 99.96, "volume": 2111400}, {"date": "2026-05-08", "open": 99.99, "high": 99.99, "low": 99.97, "close": 99.99, "volume": 2192300}, {"date": "2026-05-11", "open": 100.0, "high": 100.01, "low": 99.99, "close": 100.0, "volume": 4467800}, {"date": "2026-05-12", "open": 100.01, "high": 100.01, "low": 99.99, "close": 99.99, "volume": 3722800}, {"date": "2026-05-13", "open": 100.0, "high": 100.01, "low": 99.99, "close": 100.0, "volume": 5303000}, {"date": "2026-05-14", "open": 100.0, "high": 100.01, "low": 99.99, "close": 100.0, "volume": 15608600}, {"date": "2026-05-15", "open": 99.15, "high": 99.33, "low": 98.95, "close": 99.19, "volume": 5019700}, {"date": "2026-05-18", "open": 99.21, "high": 99.3, "low": 98.5, "close": 98.61, "volume": 4647500}, {"date": "2026-05-19", "open": 98.88, "high": 99.05, "low": 98.65, "close": 98.99, "volume": 2018100}, {"date": "2026-05-20", "open": 99.1, "high": 99.35, "low": 99.03, "close": 99.16, "volume": 1619500}, {"date": "2026-05-21", "open": 99.22, "high": 99.5, "low": 99.14, "close": 99.32, "volume": 1970200}, {"date": "2026-05-22", "open": 99.42, "high": 99.44, "low": 99.2, "close": 99.3, "volume": 1736300}, {"date": "2026-05-26", "open": 99.39, "high": 99.55, "low": 99.35, "close": 99.47, "volume": 1897800}, {"date": "2026-05-27", "open": 99.49, "high": 99.49, "low": 99.11, "close": 99.17, "volume": 1867900}, {"date": "2026-05-28", "open": 99.19, "high": 99.23, "low": 97.11, "close": 98.57, "volume": 3990800}, {"date": "2026-05-29", "open": 98.75, "high": 99.32, "low": 98.68, "close": 98.99, "volume": 4037600}, {"date": "2026-06-01", "open": 98.89, "high": 98.96, "low": 98.0, "close": 98.07, "volume": 3555500}, {"date": "2026-06-02", "open": 98.13, "high": 98.15, "low": 95.59, "close": 96.71, "volume": 5770400}, {"date": "2026-06-03", "open": 97.24, "high": 97.33, "low": 94.5, "close": 94.65, "volume": 4046200}, {"date": "2026-06-04", "open": 94.2, "high": 96.5, "low": 94.1, "close": 95.42, "volume": 3886400}, {"date": "2026-06-05", "open": 95.35, "high": 95.5, "low": 90.38, "close": 93.4, "volume": 7516900}, {"date": "2026-06-08", "open": 95.14, "high": 97.73, "low": 95.0, "close": 96.85, "volume": 4071800}, {"date": "2026-06-09", "open": 97.07, "high": 97.39, "low": 94.5, "close": 96.18, "volume": 3416700}, {"date": "2026-06-10", "open": 96.0, "high": 97.4, "low": 95.3, "close": 95.81, "volume": 1899500}, {"date": "2026-06-11", "open": 96.19, "high": 96.74, "low": 96.02, "close": 96.49, "volume": 1342300}, {"date": "2026-06-12", "open": 96.68, "high": 97.03, "low": 94.8, "close": 94.8, "volume": 2556400}, {"date": "2026-06-15", "open": 94.32, "high": 96.05, "low": 94.1, "close": 95.2, "volume": 2905900}, {"date": "2026-06-16", "open": 95.22, "high": 95.23, "low": 91.72, "close": 91.79, "volume": 2382100}, {"date": "2026-06-17", "open": 93.0, "high": 93.2, "low": 88.5, "close": 89.0, "volume": 5142100}, {"date": "2026-06-18", "open": 89.17, "high": 89.68, "low": 82.53, "close": 88.59, "volume": 10808300}, {"date": "2026-06-22", "open": 91.0, "high": 91.84, "low": 88.02, "close": 88.79, "volume": 3507700}, {"date": "2026-06-23", "open": 87.04, "high": 88.25, "low": 86.55, "close": 87.31, "volume": 2153700}, {"date": "2026-06-24", "open": 86.0, "high": 86.41, "low": 79.85, "close": 80.84, "volume": 6016900}, {"date": "2026-06-25", "open": 81.3, "high": 81.5, "low": 73.62, "close": 75.69, "volume": 8636100}, {"date": "2026-06-26", "open": 72.06, "high": 76.62, "low": 71.25, "close": 74.57, "volume": 6307900}, {"date": "2026-06-29", "open": 81.33, "high": 84.94, "low": 77.06, "close": 83.67, "volume": 7537200}, {"date": "2026-06-30", "open": 80.99, "high": 85.0, "low": 80.52, "close": 84.86, "volume": 5220100}, {"date": "2026-07-01", "open": 84.99, "high": 89.25, "low": 84.86, "close": 87.46, "volume": 2768900}, {"date": "2026-07-02", "open": 90.0, "high": 90.08, "low": 85.5, "close": 87.87, "volume": 2870200}, {"date": "2026-07-06", "open": 87.75, "high": 91.33, "low": 87.25, "close": 88.58, "volume": 2316800}, {"date": "2026-07-07", "open": 89.0, "high": 89.0, "low": 86.3, "close": 86.56, "volume": 1490200}, {"date": "2026-07-08", "open": 85.74, "high": 86.49, "low": 84.74, "close": 86.17, "volume": 1306200}, {"date": "2026-07-09", "open": 86.75, "high": 86.88, "low": 85.16, "close": 85.71, "volume": 1189800}, {"date": "2026-07-10", "open": 86.56, "high": 87.91, "low": 85.81, "close": 87.48, "volume": 1249500}, {"date": "2026-07-13", "open": 87.88, "high": 87.88, "low": 86.4, "close": 87.02, "volume": 920300}, {"date": "2026-07-14", "open": 88.0, "high": 89.5, "low": 87.32, "close": 88.21, "volume": 1289300}, {"date": "2026-07-15", "open": 88.34, "high": 89.37, "low": 87.69, "close": 87.78, "volume": 1008500}, {"date": "2026-07-16", "open": 87.75, "high": 87.75, "low": 84.87, "close": 85.42, "volume": 979000}, {"date": "2026-07-17", "open": 84.93, "high": 86.49, "low": 83.81, "close": 85.29, "volume": 974900}, {"date": "2026-07-20", "open": 86.11, "high": 88.81, "low": 86.05, "close": 87.1, "volume": 923700}, {"date": "2026-07-21", "open": 88.95, "high": 89.0, "low": 87.52, "close": 88.16, "volume": 902000}, {"date": "2026-07-22", "open": 87.88, "high": 88.28, "low": 87.18, "close": 87.45, "volume": 627400}, {"date": "2026-07-23", "open": 86.98, "high": 86.98, "low": 84.52, "close": 84.94, "volume": 1270700}, {"date": "2026-07-24", "open": 85.0, "high": 87.38, "low": 84.94, "close": 86.89, "volume": 1556900}, {"date": "2026-07-27", "open": 88.5, "high": 89.39, "low": 87.85, "close": 88.32, "volume": 1468000}, {"date": "2026-07-28", "open": 88.0, "high": 89.19, "low": 87.92, "close": 88.22, "volume": 854000}, {"date": "2026-07-29", "open": 88.02, "high": 89.06, "low": 87.5, "close": 87.51, "volume": 1065600}, {"date": "2026-07-30", "open": 88.51, "high": 89.9, "low": 88.01, "close": 89.5, "volume": 1078000}, {"date": "2026-07-31", "open": 89.18, "high": 89.86, "low": 88.22, "close": 89.46, "volume": 2079300}, {"date": "2026-08-03", "open": 90.0, "high": 92.8, "low": 89.85, "close": 92.32, "volume": 1839600}, {"date": "2026-08-04", "open": 92.48, "high": 94.23, "low": 92.26, "close": 92.53, "volume": 1798100}, {"date": "2026-08-05", "open": 93.09, "high": 94.42, "low": 92.98, "close": 94.1, "volume": 1397700}, {"date": "2026-08-06", "open": 93.85, "high": 94.9, "low": 93.6, "close": 94.06, "volume": 1337942}], "dividends": [{"date": "2025-08-15", "amount": 0.8}, {"date": "2025-09-15", "amount": 0.833}, {"date": "2025-10-15", "amount": 0.854}, {"date": "2025-11-14", "amount": 0.875}, {"date": "2025-12-15", "amount": 0.896}, {"date": "2026-01-15", "amount": 0.917}, {"date": "2026-02-13", "amount": 0.938}, {"date": "2026-03-13", "amount": 0.958}, {"date": "2026-04-15", "amount": 0.958}, {"date": "2026-05-15", "amount": 0.958}, {"date": "2026-06-15", "amount": 0.958}, {"date": "2026-06-30", "amount": 0.479}, {"date": "2026-07-15", "amount": 0.5}, {"date": "2026-07-31", "amount": 0.5}]};
+/*__DATA_END__*/
+</script>
+<script>
+"use strict";
+const D = window.STRC_DATA;
+const fmt$ = x => "$" + x.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtPct = x => (x*100).toFixed(2) + "%";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- header ---------- */
+const meta = D.meta;
+const last = meta.last_close, par = meta.par;
+const priceDate = meta.last_close_date || "—";
+const discPct = (last - par) / par;
+function addDays(dateStr, days){
+  const t = new Date(dateStr + "T00:00:00Z");
+  t.setUTCDate(t.getUTCDate() + days);
+  return t.toISOString().slice(0,10);
+}
+// TTM = all payments within 365 days of the latest payment.
+// Run-rate: detect cadence from recent payment gaps, then last payment x payments/yr.
+const lastDivDate = D.dividends.length ? D.dividends[D.dividends.length-1].date : null;
+const ttmDivs = lastDivDate ? D.dividends.filter(d => d.date >= addDays(lastDivDate, -365)) : [];
+const ttm = ttmDivs.reduce((a,d)=>a+d.amount,0);
+function cadenceRate(ds, i){
+  const gaps = [];
+  for (let j = i; j >= 1 && gaps.length < 3; j--)
+    gaps.push((new Date(ds[j].date) - new Date(ds[j-1].date)) / 86400000);
+  if (gaps.length < 2) return null;
+  const med = [...gaps].sort((a,b)=>a-b)[Math.floor(gaps.length/2)];
+  const amt = ds[i].amount;
+  return med <= 21 ? amt * 24 : med <= 35 ? amt * 12 : amt * 4;  // semi-monthly | monthly | quarterly
+}
+const runRate = lastDivDate && D.dividends.length >= 3 ? (cadenceRate(D.dividends, D.dividends.length-1) || ttm) : ttm;
+document.getElementById("chip-price").textContent = fmt$(last) + "  <small style='font-size:12px;color:#8b95ab'>" + priceDate + "</small>";
+const pegChip = document.getElementById("chip-peg");
+pegChip.classList.toggle("disc-down", discPct < 0);
+pegChip.classList.toggle("disc-up", discPct >= 0);
+document.getElementById("chip-peg-v").textContent = (discPct < 0 ? "−" : "+") + Math.abs(discPct*100).toFixed(2) + "%";
+document.getElementById("chip-rate").textContent = fmt$(runRate) + "/yr";
+document.getElementById("chip-yield").textContent = fmtPct(runRate / last);
+const w52 = meta.fifty_two_week || {};
+document.getElementById("chip-52").textContent = fmt$(w52.low||0) + " – " + fmt$(w52.high||0);
+
+/* ---------- chart ---------- */
+const prices = D.prices;
+const canvas = document.getElementById("chart"), ctx = canvas.getContext("2d");
+const tt = document.getElementById("tt");
+const PADL = 56, PADR = 14, PADT = 14, PADB = 26;
+function drawChart() {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  if (!prices.length) return;
+  const closes = prices.map(p=>p.close);
+  const lo = Math.min(...closes, w52.low||Infinity, last) * 0.98;
+  const hi = Math.max(...closes, w52.high||0, par, last) * 1.02;
+  const n = prices.length;
+  const X = i => PADL + (W-PADL-PADR) * i/(n-1);
+  const Y = v => PADT + (H-PADT-PADB) * (1 - (v-lo)/(hi-lo));
+  // grid + y labels
+  ctx.font = "11px monospace"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let g=0; g<=4; g++) {
+    const v = lo + (hi-lo)*g/4, y = Y(v);
+    ctx.strokeStyle = "rgba(255,255,255,.06)"; ctx.beginPath(); ctx.moveTo(PADL,y); ctx.lineTo(W-PADR,y); ctx.stroke();
+    ctx.fillStyle = "#8b95ab"; ctx.fillText(v.toFixed(0), PADL-6, y);
+  }
+  // peg line at 100
+  if (par >= lo && par <= hi) {
+    const y = Y(par);
+    ctx.strokeStyle = "rgba(139,149,171,.8)"; ctx.setLineDash([6,4]); ctx.beginPath(); ctx.moveTo(PADL,y); ctx.lineTo(W-PADR,y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#8b95ab"; ctx.fillText("$100 par", W-PADR-4, y-8);
+    // discount shading
+    const yNow = Y(last);
+    ctx.fillStyle = "rgba(239,68,68,.07)";
+    ctx.fillRect(PADL, Math.min(y,yNow), W-PADL-PADR, Math.abs(y-yNow));
+  }
+  // close line
+  ctx.strokeStyle = "#f7931a"; ctx.lineWidth = 2; ctx.beginPath();
+  prices.forEach((p,i)=>{ i?ctx.lineTo(X(i),Y(p.close)):ctx.moveTo(X(i),Y(p.close)); });
+  ctx.stroke();
+  // last point dot
+  ctx.fillStyle = "#f7931a"; ctx.beginPath(); ctx.arc(X(n-1), Y(closes[n-1]), 4, 0, 7); ctx.fill();
+  // x labels: first, middle, last
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  [0, Math.floor(n/2), n-1].forEach(i=>{
+    ctx.fillStyle = "#8b95ab"; ctx.fillText(prices[i].date, X(i), H-PADB+6);
+  });
+  // summary
+  document.getElementById("chart-summary").textContent =
+    "range " + fmt$(lo/0.98) + " – " + fmt$(hi/1.02) + " · " + n + " sessions · discount region shaded";
+  drawHover(null);
+}
+function drawHover(idx) {
+  if (!prices.length) return;
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  const lo = Math.min(...prices.map(p=>p.close), w52.low||Infinity, last) * 0.98;
+  const hi = Math.max(...prices.map(p=>p.close), w52.high||0, par, last) * 1.02;
+  const n = prices.length;
+  const X = i => PADL + (W-PADL-PADR) * i/(n-1);
+  const Y = v => PADT + (H-PADT-PADB) * (1 - (v-lo)/(hi-lo));
+  if (idx === null || idx < 0 || idx >= n) { tt.style.display = "none"; return; }
+  const p = prices[idx];
+  const px = X(idx), py = Y(p.close);
+  ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(px,PADT); ctx.lineTo(px,H-PADB); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = "#f7931a"; ctx.beginPath(); ctx.arc(px,py,3.5,0,7); ctx.fill();
+  const vp = (p.close-par)/par*100;
+  tt.innerHTML = "<b>" + esc(p.date) + "</b> close " + fmt$(p.close) +
+    "<br>" + (vp<0?"−":"+") + Math.abs(vp).toFixed(2) + "% vs par";
+  tt.style.display = "block";
+  const tw = tt.offsetWidth, th = tt.offsetHeight;
+  tt.style.left = Math.min(Math.max(px-tw/2, 4), W-tw-4) + "px";
+  tt.style.top = (py-th-12 > 0 ? py-th-12 : py+12) + "px";
+}
+canvas.addEventListener("mousemove", e=>{
+  const r = canvas.getBoundingClientRect(), W = canvas.clientWidth, n = prices.length;
+  const idx = Math.round((e.clientX-r.left-PADL)/((W-PADL-PADR)/(n-1)));
+  drawHover(idx);
+});
+canvas.addEventListener("mouseleave", ()=>drawHover(null));
+window.addEventListener("resize", drawChart);
+
+/* ---------- dividend table ---------- */
+(function(){
+  const tbody = document.querySelector("#div-table tbody");
+  let cum = 0;
+  D.dividends.forEach((d,i)=>{
+    cum += d.amount;
+    const annRun = cadenceRate(D.dividends, i);
+    let note = "";
+    if (i === 0) note = "first payment";
+    if (d.date === "2026-06-30") note = "cadence switch → semi-monthly";
+    if (d.date === "2026-07-15") note = "new $0.50×2/mo schedule";
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + d.date + "</td><td>" + fmt$(d.amount) + "</td><td>" + fmt$(cum) +
+      "</td><td>" + (annRun ? fmt$(annRun)+"/yr" : "—") + "</td><td class='flag'>" + note + "</td>";
+    tbody.appendChild(tr);
+  });
+  document.getElementById("div-note").textContent =
+    "Trailing 12 months: " + fmt$(ttm) + "/share (" + fmtPct(ttm/par) + " on par, " + fmtPct(ttm/last) + " on price). " +
+    "Current run-rate: " + fmt$(runRate) + "/yr (" + fmtPct(runRate/last) + " on price — matches Nasdaq 12.75%). " +
+    "Variable-rate preferred: payments ramped $0.80 → $0.958/mo (Aug'25–Mar'26), then restructured to $0.50 semi-monthly (declared 2026-06-28) ≈ $12.00/yr. Nasdaq cross-checked.";
+})();
+
+/* ---------- scenarios ---------- */
+const SCN_DEFS = [
+  {key:"bear",  name:"Bearish", color:"var(--red)",    priceEnd:84.00,  divStart:1.00, divEnd:0.80, prob:30},
+  {key:"neutral",name:"Neutral", color:"var(--yellow)", priceEnd:last,   divStart:1.00, divEnd:1.00, prob:40},
+  {key:"bull",  name:"Bullish", color:"var(--green)",  priceEnd:104.00, divStart:1.00, divEnd:1.10, prob:30},
+];
+const scenWrap = document.getElementById("scen-wrap");
+SCN_DEFS.forEach(s=>{
+  const el = document.createElement("div");
+  el.className = "scen " + s.key;
+  el.innerHTML =
+    '<div class="shead"><span class="sname" style="color:' + s.color + '">' + s.name + '</span>' +
+    '<span class="sprob"><label style="font-size:11px;color:#8b95ab">prob % </label><input type="number" min="0" max="100" step="1" value="' + s.prob + '" data-k="prob"></span></div>' +
+    '<div class="srow">' +
+      '<div class="field"><label>Terminal price $</label><input type="number" step="0.01" min="1" value="' + s.priceEnd + '" data-k="priceEnd"><div class="hint" data-k="pegpct"></div></div>' +
+      '<div class="field"><label>Div start $/mo</label><input type="number" step="0.01" min="0" value="' + s.divStart + '" data-k="divStart"><div class="hint">now → horizon</div></div>' +
+      '<div class="field"><label>Div end $/mo</label><input type="number" step="0.01" min="0" value="' + s.divEnd + '" data-k="divEnd"><div class="hint">at horizon</div></div>' +
+    '</div>';
+  el.querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("input", ()=>{ normalizeProbs(); recalc(); });
+  });
+  scenWrap.appendChild(el);
+});
+function scenInputs(){
+  return [...scenWrap.querySelectorAll(".scen")].map(el=>{
+    const o = {};
+    el.querySelectorAll("input[data-k]").forEach(i=>o[i.dataset.k] = parseFloat(i.value)||0);
+    el.querySelectorAll("[data-k=pegpct]").forEach(i=>{
+      i.textContent = "= " + (o.priceEnd/par*100).toFixed(1) + "% of par";
+      i.style.color = o.priceEnd < par ? "var(--red)" : o.priceEnd > par ? "var(--green)" : "var(--muted)";
+    });
+    return o;
+  });
+}
+function normalizeProbs(){
+  const ins = [...scenWrap.querySelectorAll("input[data-k=prob]")];
+  const tot = ins.reduce((a,i)=>a+(parseFloat(i.value)||0),0);
+  if (tot > 0 && tot !== 100) ins.forEach(i=>i.value = Math.round((parseFloat(i.value)||0)/tot*100));
+}
+function baseInputs(){
+  return {
+    shares: parseFloat(document.getElementById("in-shares").value)||0,
+    costBasis: parseFloat(document.getElementById("in-cost").value)||0,
+    horizon: parseFloat(document.getElementById("in-horizon").value)||12,
+    reinvest: mode === "reinvest",
+  };
+}
+
+/* ---------- results ---------- */
+let mode = "cash";
+document.querySelectorAll("#seg-mode button").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    mode = b.dataset.mode;
+    document.querySelectorAll("#seg-mode button").forEach(x=>x.classList.toggle("on", x===b));
+    recalc();
+  });
+});
+const resBody = document.querySelector("#res-table tbody");
+const COLOR = {Bearish:"var(--red)", Neutral:"var(--yellow)", Bullish:"var(--green)", "EV (weighted)":"var(--accent)"};
+function recalc(){
+  const base = baseInputs();
+  const scns = scenInputs().map((s,i)=>({
+    label: SCN_DEFS[i].name, prob: (s.prob||0)/100,
+    priceEnd: s.priceEnd, divStart: s.divStart, divEnd: s.divEnd,
+  }));
+  const rows = STRC_ENGINE.evaluate(scns, {...base, priceNow: last});
+  const cost = base.shares * base.costBasis;
+  resBody.innerHTML = "";
+  rows.forEach(r=>{
+    const tr = document.createElement("tr");
+    if (r.label === "EV (weighted)") tr.className = "evrow";
+    const cls = r.totalReturn >= 0 ? "pos" : "neg";
+    const vsPar = (r.endPrice - par)/par*100;
+    tr.innerHTML =
+      "<td style='color:" + COLOR[r.label] + "'>" + r.label + "</td>" +
+      "<td>" + (r.prob*100).toFixed(0) + "%</td>" +
+      "<td class='num'>" + fmt$(r.endPrice) + "</td>" +
+      "<td class='num " + (vsPar<0?"neg":vsPar>0?"pos":"flat") + "'>" + (vsPar<0?"−":"+") + Math.abs(vsPar).toFixed(1) + "%</td>" +
+      "<td class='num " + (r.pricePnL>=0?"pos":"neg") + "'>" + (r.pricePnL>=0?"+":"−") + fmt$(Math.abs(r.pricePnL)) + "</td>" +
+      "<td class='num pos'>+" + fmt$(r.divIncome) + "</td>" +
+      "<td class='num " + cls + "'>" + (r.totalReturn>=0?"+":"−") + fmt$(Math.abs(r.totalReturn)) + "</td>" +
+      "<td class='num " + cls + "'>" + (r.totalRet>=0?"+":"−") + fmtPct(Math.abs(r.totalRet)) + "</td>" +
+      "<td class='num'>" + fmtPct(r.yieldOnCost) + "</td>" +
+      "<td class='num'>" + fmtPct(r.curYield) + "</td>" +
+      "<td class='num'>" + (r.breakevenMonths ? r.breakevenMonths + " mo" : (mode==="reinvest" ? "—" : "—")) + "</td>";
+    resBody.appendChild(tr);
+  });
+  const ev = rows[rows.length-1];
+  document.getElementById("position-summary").textContent =
+    "Capital at risk: " + fmt$(cost) + " (" + base.shares + " sh × " + fmt$(base.costBasis) + "). " +
+    (mode==="cash" ? "Dividends taken as cash." : "Dividends reinvested at scenario prices.") +
+    " EV total return " + (ev.totalReturn>=0?"+":"−") + fmt$(Math.abs(ev.totalReturn)) + " (" +
+    (ev.totalRet>=0?"+":"−") + fmtPct(Math.abs(ev.totalRet)) + ") over " + base.horizon + " mo.";
+  document.getElementById("res-note").textContent =
+    "Breakeven = months of dividends (avg path) to recoup cost basis; N/A when reinvesting. EV = Σ prob × scenario total return. " +
+    "Scenario projections, not forecasts.";
+}
+document.getElementById("btn-reset").addEventListener("click", ()=>{
+  document.getElementById("in-shares").value = 100;
+  document.getElementById("in-cost").value = last.toFixed(2);
+  document.getElementById("in-horizon").value = 12;
+  [...scenWrap.querySelectorAll(".scen")].forEach((el,i)=>{
+    el.querySelector("[data-k=priceEnd]").value = SCN_DEFS[i].priceEnd;
+    el.querySelector("[data-k=divStart]").value = SCN_DEFS[i].divStart;
+    el.querySelector("[data-k=divEnd]").value = SCN_DEFS[i].divEnd;
+    el.querySelector("[data-k=prob]").value = SCN_DEFS[i].prob;
+  });
+  mode = "cash";
+  document.querySelectorAll("#seg-mode button").forEach(x=>x.classList.toggle("on", x.dataset.mode==="cash"));
+  recalc();
+});
+["in-shares","in-cost","in-horizon"].forEach(id=>document.getElementById(id).addEventListener("input", recalc));
+
+/* ---------- init ---------- */
+document.getElementById("asof").textContent = (meta.as_of || "—").replace("T"," ").replace("Z"," UTC");
+drawChart();
+recalc();
+</script>
+</body>
+</html>
