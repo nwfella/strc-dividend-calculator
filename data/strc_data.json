@@ -4,10 +4,10 @@
     "name": "Strategy Inc - Variable Rate Se",
     "par": 100.0,
     "currency": "USD",
-    "as_of": "2026-09-18T17:12:58Z",
+    "as_of": "2026-09-22T06:50:20Z",
     "source": "yahoo v8 chart API",
-    "last_close": 98.66,
-    "last_close_date": "2026-09-18",
+    "last_close": 98.78,
+    "last_close_date": "2026-09-21",
     "fifty_two_week": {
       "high": 100.42,
       "low": 71.25
@@ -2261,6 +2261,14 @@
       "low": 98.1,
       "close": 98.66,
       "volume": 859663
+    },
+    {
+      "date": "2026-09-21",
+      "open": 98.75,
+      "high": 99.05,
+      "low": 98.71,
+      "close": 98.78,
+      "volume": 1846100
     }
   ],
   "dividends": [
