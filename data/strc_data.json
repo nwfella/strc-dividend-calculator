@@ -4,9 +4,9 @@
     "name": "Strategy Inc - Variable Rate Se",
     "par": 100.0,
     "currency": "USD",
-    "as_of": "2026-11-25T17:00:52Z",
+    "as_of": "2026-11-26T17:00:59Z",
     "source": "yahoo v8 chart API",
-    "last_close": 96.83,
+    "last_close": 98.04,
     "last_close_date": "2026-11-25",
     "fifty_two_week": {
       "high": 100.42,
@@ -2791,6 +2791,10 @@
     {
       "date": "2026-11-24",
       "amount": 0.04
+    },
+    {
+      "date": "2026-11-25",
+      "amount": 0.06
     }
   ]
 }
